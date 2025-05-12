@@ -5,14 +5,16 @@ import com.todoapp.todoapp.entity.Status;
 import com.todoapp.todoapp.entity.TaskTracker;
 import com.todoapp.todoapp.exception.TaskException;
 import com.todoapp.todoapp.repo.TaskRepo;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-@Service
-public class TaskTrackerServiceImpl implements TaskTrackerService{
+@Service(value = "taskService")
+@Transactional
+public class TaskTrackerServiceImpl implements TaskTrackerService {
 
     @Autowired
     private TaskRepo taskRepo;
@@ -22,48 +24,83 @@ public class TaskTrackerServiceImpl implements TaskTrackerService{
         TaskTracker taskTracker = new TaskTracker();
         taskTracker.setTaskName(taskDTO.getTaskName());
         taskTracker.setTaskDescription(taskDTO.getTaskDescription());
-        taskTracker.setTaskStatus(taskDTO.getTaskStatus());
+        taskTracker.setStatus(taskDTO.getTaskStatus());
         taskRepo.save(taskTracker);
         return taskTracker.getTaskId();
     }
 
     @Override
-    public String updateTask(Integer taskId, String taskDescription) throws TaskException {
-        return "";
+    public void updateTask(Integer taskId, String taskDescription) throws TaskException {
+        if (null == taskId) {
+            throw new TaskException("Task ID not provided !!!!");
+        }
+        Optional<TaskTracker> task = taskRepo.findById(taskId);
+        TaskTracker tracker = task.orElseThrow(()->new TaskException("No Records Found from this Task ID !!!!"));
+        tracker.setTaskDescription(taskDescription);
     }
 
     @Override
-    public String updateTaskStatus(Integer taskId, Status status) throws TaskException {
-        return "";
+    public void updateTaskStatus(Integer taskId, Status status) throws TaskException {
+        if (null == taskId) {
+            throw new TaskException("Task ID not provided !!!!");
+        }
+        Optional<TaskTracker> task = taskRepo.findById(taskId);
+        TaskTracker tracker = task.orElseThrow(()->new TaskException("No Records Found from this Task ID !!!!"));
+        tracker.setStatus(status);
     }
 
     @Override
-    public Integer deleteTask(Integer taskId) throws TaskException {
-        return 0;
+    public void deleteTask(Integer taskId) throws TaskException {
+        if (null == taskId) {
+            throw new TaskException("Task ID not provided !!!!");
+        }
+        Optional<TaskTracker> task = taskRepo.findById(taskId);
+        task.orElseThrow(()->new TaskException("No Records Found from this Task ID !!!!"));
+        taskRepo.deleteById(taskId);
     }
 
     @Override
-    public TaskTrackerDTO getTask(Integer taskId) throws TaskException {
-        return null;
+    public Optional<TaskTracker> getTask(Integer taskId) throws TaskException {
+        Optional<TaskTracker> taskTracker = taskRepo.findById(taskId);
+        if (taskTracker.isEmpty()) {
+            throw new TaskException("No Record found from this Task ID !!!!");
+        }
+        return taskTracker;
     }
 
     @Override
-    public List<TaskTrackerDTO> getAllTasks() throws TaskException {
-        return List.of();
+    public List<TaskTracker> getAllTasks() throws TaskException {
+        List<TaskTracker> taskTrackers = (List<TaskTracker>) taskRepo.findAll();
+        if (taskTrackers.isEmpty()) {
+            throw new TaskException("No Records Found !!!");
+        }
+        return taskTrackers;
     }
 
     @Override
-    public List<TaskTrackerDTO> getNotDoneTasks() throws TaskException {
-        return List.of();
+    public List<TaskTracker> getNotDoneTasks() throws TaskException {
+        List<TaskTracker> notDoneTasks = taskRepo.findByStatus(Status.NOT_DONE);
+        if (notDoneTasks.isEmpty()) {
+            throw new TaskException("No Records Found !!!!");
+        }
+        return notDoneTasks;
     }
 
     @Override
-    public List<TaskTrackerDTO> getDoneTasks() throws TaskException {
-        return List.of();
+    public List<TaskTracker> getDoneTasks() throws TaskException {
+        List<TaskTracker> doneTasks = taskRepo.findByStatus(Status.DONE);
+        if (doneTasks.isEmpty()) {
+            throw new TaskException("No Records Found !!!!");
+        }
+        return doneTasks;
     }
 
     @Override
-    public List<TaskTrackerDTO> getInProgressTasks() throws TaskException {
-        return List.of();
+    public List<TaskTracker> getInProgressTasks() throws TaskException {
+        List<TaskTracker> inProgressTasks = taskRepo.findByStatus(Status.IN_PROGRESS);
+        if (inProgressTasks.isEmpty()) {
+            throw new TaskException("No Records Found !!!!");
+        }
+        return inProgressTasks;
     }
 }
